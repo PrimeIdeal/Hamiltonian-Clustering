@@ -16,6 +16,6 @@ Future developments:
 - automate tuning
 - more sophisticated methods for solving systems of differential
 equations, numerical integration
-- adapt our implementation to Casagrande, Astolfi and Sassano's 2012 paper
-on Hamiltonian clustering
+- adapt our implementation to match the refinements in Casagrande, Astolfi and 
+Sassano's 2012 paper on Hamiltonian clustering
 - Pytorch deployment
