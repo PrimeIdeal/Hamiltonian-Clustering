@@ -1,5 +1,6 @@
 """
-We solve the trajectories for our Hamiltonian system in this module.
+We store functions for defining and solving the trajectories of the 
+Hamiltonian system in this module.
 
 General approach: given data set D = {E_1, E_2, ..., E_n} in R^2 where
 E_i = (x_i, p_i), define the Hamiltonian function
@@ -17,7 +18,7 @@ derivatives of H with respect to x and p and
 We then repeat the process, using E(t) as our initial condition and
 replacing f_1(x, p) with
     f_2(x, p) = k2(H_x^2 + H_p^2)^-1/2
-until we have computed a closed trajectory.
+until we have computed a closed trajectory S.
 
 Requirements: numpy, math, ODESolve
 
@@ -78,7 +79,7 @@ def H(E, D):
     E : ndarray
         Point in R^2
     D : ndarray
-        Array of data points E_1, ... E_n in R^2
+        Array of data points E_1, ..., E_n in R^2
 
     Returns
     -------
@@ -97,7 +98,7 @@ def H_x(E, D):
     E : ndarray
         Point in R^2
     D : ndarray
-        Array of data points E_1, ... E_n in R^2
+        Array of data points E_1, ..., E_n in R^2
 
     Returns
     -------
@@ -115,7 +116,7 @@ def H_p(E, D):
     E : ndarray
         Point in R^2
     D : ndarray
-        Array of data points E_1, ... E_n in R^2
+        Array of data points E_1, ..., E_n in R^2
 
     Returns
     -------
@@ -127,7 +128,7 @@ def H_p(E, D):
 def f_1(E, D, k1):
     """
     First modifying function for our dynamical system. Steers the
-    solution from the initial point to a point on the desired trajectory 
+    solution from the initial point to a point on the desired trajectory S 
     in finite time.
 
     Parameters
@@ -135,7 +136,7 @@ def f_1(E, D, k1):
     E : ndarray
         Point in R^2
     D : ndarray
-        Array of data points E_1, ... E_n in R^2
+        Array of data points E_1, ..., E_n in R^2
     k1 : float
         Tuning parameter. k1 > 0
 
@@ -149,14 +150,14 @@ def f_1(E, D, k1):
 def f_2(E, D, k2):
     """
     Second modifying function for our dynamical system. Allows the
-    trajectory to be computed in finite time.
+    trajectory S to be computed in finite time.
 
     Parameters
     ---------
     E : ndarray
         Point in R^2
     D : ndarray
-        Array of data points E_1, ... E_n in R^2
+        Array of data points E_1, ..., E_n in R^2
     k1 : float
         Tuning parameter. k2 > 0
 
@@ -166,3 +167,34 @@ def f_2(E, D, k2):
         Value of f_2 at point E
     """
     return k2/m.sqrt(H_x(E, D)**2 + H_p(E, D)**2)
+
+def trajectory_reached(E, D, H_r, delta):
+    """
+    Determines if the solution of the first stage of the modified dynamics
+    has reached the trajectory S to be computed, ie. if H(E) = H_r.
+
+    Parameters
+    ----------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ..., E_n in R^2
+    H_r : float
+        Reference level for the trajectory to be computed. 0 < H_r < 1
+    delta : float
+        Target error for H
+
+    Returns
+    -------
+    bool
+        True if H(E) is within delta of H_r, False otherwise
+    """
+    return abs(H(E, D)-H_r) < delta
+
+def is_periodic():
+    """
+    Determines if the solution of the second stage of the modified dynamics
+    is periodic, ie. if there exists time T such that S(t) = S(t + T) for
+    all t
+    """
+    pass
