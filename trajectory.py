@@ -123,3 +123,46 @@ def H_p(E, D):
         Value of H_p at point E
     """
     return sum(-2*(E[1]-E_i[1])*H_i(E, E_i) for E_i in D)
+
+def f_1(E, D, k1):
+    """
+    First modifying function for our dynamical system. Steers the
+    solution from the initial point to a point on the desired trajectory 
+    in finite time.
+
+    Parameters
+    ---------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ... E_n in R^2
+    k1 : float
+        Tuning parameter. k1 > 0
+
+    Returns
+    -------
+    float
+        Value of f_1 at point E
+    """
+    return k1/(H_x(E, D)**2 + H_p(E, D)**2)
+
+def f_2(E, D, k2):
+    """
+    Second modifying function for our dynamical system. Allows the
+    trajectory to be computed in finite time.
+
+    Parameters
+    ---------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ... E_n in R^2
+    k1 : float
+        Tuning parameter. k2 > 0
+
+    Returns
+    -------
+    float
+        Value of f_2 at point E
+    """
+    return k2/m.sqrt(H_x(E, D)**2 + H_p(E, D)**2)
