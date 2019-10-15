@@ -9,7 +9,7 @@ where
     f(x, t) = (f_x1(x, t), f_x2(x, t), ..., f_xn(x, t))
 
 Guidelines:
-    - for now, the DE solvers should execute a single step of the solution(s)
+    - for now, the DE solvers should execute a single step of the solution
     per function call
     - solvers should accept a time argument even if the solution has no
     explicit time dependence
@@ -27,7 +27,7 @@ import math as m
 def euler(x, f, t, h):
     """
     Helper function for leapfrog. Executes a single iteration of Euler's 
-    method with time step h/2: given x(t), returns x(t+h/2).
+    method with time step h/2. Given x(t), returns x(t+h/2).
 
     Parameters
     ----------
@@ -49,8 +49,8 @@ def euler(x, f, t, h):
 
 def leapfrog(x, half, f, t, h):
     """
-    Executes a single iteration of the leapfrog algorithm with time step h:
-    given x(t) and x(t+h/2), returns x(t+h) and x(t+3h/2).
+    Executes a single iteration of the leapfrog algorithm with time step h.
+    Given x(t) and x(t+h/2), returns x(t+h) and x(t+3h/2).
 
     Parameters
     ----------
