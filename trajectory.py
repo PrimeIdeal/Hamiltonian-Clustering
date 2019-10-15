@@ -46,8 +46,26 @@ def euclidean(E1, E2):
     float
         Euclidean distance between the two points
     """
-    return m.sqrt((E1[0]-E2[0])**2 + (E1[1]-E2[1])**2)
+    return m.sqrt(np.dot(E1-E2, E1-E2))
 
+def H_i(E, E_i):
+    """
+    Helper function for H. We construct a 2D gaussian about each
+    observed data point E_i.
+
+    Parameters
+    ----------
+    E : ndarray
+        Point in R^2
+    E_i : ndarray
+        One of our data points
+
+    Returns
+    -------
+    float
+        Value at E of gaussian centered at E_i
+    """
+    return m.exp(-euclidean(E, E_i)**2)
 
 def H(E, D):
     """
@@ -65,26 +83,43 @@ def H(E, D):
     Returns
     -------
     float
-        Total energy at point E
+        Value of H at point E
     """
 
-    def H_i(E, E_i):
-        """
-        Helper function for H. We construct a 2D gaussian about each
-        observed data point E_i.
-
-        Parameters
-        ----------
-        E : ndarray
-            Point in R^2
-        E_i : ndarray
-            One of our data points
-
-        Returns
-        -------
-        float
-            Value at E of gaussian centered at E_i
-        """
-        return m.exp(-euclidean(E, E_i)**2)
-
     return sum(H_i(E, E_i) for E_i in D)
+
+def H_x(E, D):
+    """
+    1st partial derivative of H with respect to x.
+
+    Parameters
+    ---------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ... E_n in R^2
+
+    Returns
+    -------
+    float
+        Value of H_x at point E
+    """
+    return sum(-2*(E[0]-E_i[0])*H_i(E, E_i) for E_i in D)
+
+def H_p(E, D):
+    """
+    1st partial derivative of H with respect to p.
+
+    Parameters
+    ---------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ... E_n in R^2
+
+    Returns
+    -------
+    float
+        Value of H_p at point E
+    """
+    return sum(-2*(E[1]-E_i[1])*H_i(E, E_i) for E_i in D)
