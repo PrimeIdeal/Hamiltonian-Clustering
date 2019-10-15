@@ -3,7 +3,7 @@ We solve the trajectories for our Hamiltonian system in this module.
 
 General approach: given data set D = {E_1, E_2, ..., E_n} in R^2 where
 E_i = (x_i, p_i), define the Hamiltonian function
-    H(E) = sum(H_i(E)) for 1 < i < N
+    H(E) = sum(H_i(E)) for i in [1, N]
 where
     H_i(E) = exp(-rho(E)^2)
     rho = ||E - E_i|| (Euclidean distance)
@@ -25,7 +25,66 @@ Date            Author              Description
 10/15/2019      Pierre Gauvreau     initial version - leapfrog algorithm
 """
 
+
 import numpy as np 
 import math as m
 from ODESolve import leapfrog
 
+def euclidean(E1, E2):
+    """
+    Returns Euclidian distance between two points E1 and E2 in R^2.
+
+    Parameters
+    ----------
+    E1 : ndarray
+        Point in R^2
+    E2 : ndarray
+        Point in R^2
+
+    Returns
+    -------
+    float
+        Euclidean distance between the two points
+    """
+    return m.sqrt((E1[0]-E2[0])**2 + (E1[1]-E2[1])**2)
+
+
+def H(E, D):
+    """
+    The Hamiltonian function. Defines total energy of the system in terms
+    of position and momentum. We use the notation E = (x, p) to denote
+    points in phase space.
+
+    Parameters
+    ---------
+    E : ndarray
+        Point in R^2
+    D : ndarray
+        Array of data points E_1, ... E_n in R^2
+
+    Returns
+    -------
+    float
+        Total energy at point E
+    """
+
+    def H_i(E, E_i):
+        """
+        Helper function for H. We construct a 2D gaussian about each
+        observed data point E_i.
+
+        Parameters
+        ----------
+        E : ndarray
+            Point in R^2
+        E_i : ndarray
+            One of our data points
+
+        Returns
+        -------
+        float
+            Value at E of gaussian centered at E_i
+        """
+        return m.exp(-euclidean(E, E_i)**2)
+
+    return sum(H_i(E, E_i) for E_i in D)
