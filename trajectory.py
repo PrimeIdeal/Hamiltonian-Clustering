@@ -2,7 +2,7 @@
 We store functions for defining and solving the trajectories of the 
 Hamiltonian system in this module.
 
-General approach: given data set D = {E_1, E_2, ..., E_n} in R^2 where
+General approach: given data set D = {E_1, E_2, ..., E_n} in phase space where
 E_i = (x_i, p_i), define the Hamiltonian function
     H(E) = sum(H_i(E)) for i in [1, N]
 where
@@ -33,14 +33,14 @@ from ODESolve import leapfrog
 
 def euclidean(E1, E2):
     """
-    Returns Euclidian distance between two points E1 and E2 in R^2.
+    Returns Euclidian distance between two points E1 and E2 in phase space.
 
     Parameters
     ----------
     E1 : ndarray
-        Point in R^2
+        Point in phase space
     E2 : ndarray
-        Point in R^2
+        Point in phase space
 
     Returns
     -------
@@ -57,7 +57,7 @@ def H_i(E, E_i):
     Parameters
     ----------
     E : ndarray
-        Point in R^2
+        Point in phase space
     E_i : ndarray
         One of our data points
 
@@ -68,7 +68,7 @@ def H_i(E, E_i):
     """
     return m.exp(-euclidean(E, E_i)**2)
 
-def H(E, D):
+def H(E):
     """
     The Hamiltonian function. Defines total energy of the system in terms
     of position and momentum. We use the notation E = (x, p) to denote
@@ -77,9 +77,7 @@ def H(E, D):
     Parameters
     ---------
     E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
+        Point in phase space
 
     Returns
     -------
@@ -89,112 +87,164 @@ def H(E, D):
 
     return sum(H_i(E, E_i) for E_i in D)
 
-def H_x(E, D):
+def H_partial(E, var):
     """
-    1st partial derivative of H with respect to x.
-
-    Parameters
-    ---------
-    E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
-
-    Returns
-    -------
-    float
-        Value of H_x at point E
-    """
-    return sum(-2*(E[0]-E_i[0])*H_i(E, E_i) for E_i in D)
-
-def H_p(E, D):
-    """
-    1st partial derivative of H with respect to p.
-
-    Parameters
-    ---------
-    E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
-
-    Returns
-    -------
-    float
-        Value of H_p at point E
-    """
-    return sum(-2*(E[1]-E_i[1])*H_i(E, E_i) for E_i in D)
-
-def f_1(E, D, k1):
-    """
-    First modifying function for our dynamical system. Steers the
-    solution from the initial point to a point on the desired trajectory S 
-    in finite time.
-
-    Parameters
-    ---------
-    E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
-    k1 : float
-        Tuning parameter. k1 > 0
-
-    Returns
-    -------
-    float
-        Value of f_1 at point E
-    """
-    return k1/(H_x(E, D)**2 + H_p(E, D)**2)
-
-def f_2(E, D, k2):
-    """
-    Second modifying function for our dynamical system. Allows the
-    trajectory S to be computed in finite time.
-
-    Parameters
-    ---------
-    E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
-    k1 : float
-        Tuning parameter. k2 > 0
-
-    Returns
-    -------
-    float
-        Value of f_2 at point E
-    """
-    return k2/m.sqrt(H_x(E, D)**2 + H_p(E, D)**2)
-
-def trajectory_reached(E, D, H_r, delta):
-    """
-    Determines if the solution of the first stage of the modified dynamics
-    has reached the trajectory S to be computed, ie. if H(E) = H_r.
+    1st partial derivative of H with respect to some variable.
 
     Parameters
     ----------
     E : ndarray
-        Point in R^2
-    D : ndarray
-        Array of data points E_1, ..., E_n in R^2
-    H_r : float
-        Reference level for the trajectory to be computed. 0 < H_r < 1
-    delta : float
-        Target error for H
+        Point in phase space
+    var : str
+        The variable with respect to which we take the derivative
 
     Returns
     -------
-    bool
-        True if H(E) is within delta of H_r, False otherwise
+    float
+        Value of H_var at point E
     """
-    return abs(H(E, D)-H_r) < delta
+    var_dict = {'x': 0, 'p': 1}
+    assert var in var_dict.keys()
+    idx = var_dict[var]
+    return sum(-2*(E[idx]-E_i[idx])*H_i(E, E_i) for E_i in D)
 
-def is_periodic():
+def f(E, k, stage):
     """
-    Determines if the solution of the second stage of the modified dynamics
-    is periodic, ie. if there exists time T such that S(t) = S(t + T) for
-    all t
+    Modifying function for our dynamical system. First stage function steers 
+    the solution from the initial point to a point on the desired trajectory S 
+    in finite time. Second stage function allows the trajectory S to be 
+    computed in finite time.
+
+    Parameters
+    ----------
+    E : ndarray
+        Point in phase space
+    k : float
+        Tuning parameter for the stage. k > 0
+    stage : int
+        stage of the trajectory calculation we are computing, 1 or 2
+
+    Returns
+    -------
+    float
+        Value of f at point E
     """
-    pass
+    assert stage in (1, 2)
+    if stage == 1:
+        return k/(H_partial(E, 'x')**2 + H_partial(E, 'p')**2)
+    else:
+        return k/m.sqrt(H_partial(E, 'x')**2 + H_partial(E, 'p')**2)
+
+def dynamics(E, t):
+    """
+    The modified dynamics to be solved in the trajectory computation. Note
+    that x and p have no explicit time dependence.
+
+    Parameters
+    ----------
+    E : ndarray
+        Point in phase space
+    t : float
+        Current time
+
+    Returns
+    -------
+    float
+        Value of the time derivatives at (E, t)
+    """
+    Hx, Hp, diff, mod = H_partial(E, 'x'), H_partial(E, 'p'), H(E)-H_r, f(E, k, stage)
+    dxdt, dpdt = mod*(Hp - Hx*diff**(1/3)), -mod*(Hx + Hp*diff**(1/3))
+    return np.array([dxdt, dpdt], float)
+
+def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2, maxcount=5):
+    """
+    Computes trajectory corresponding to E_initial and reference level ref_level, subject
+    to the Hamiltonian defined by the points in dataset.
+
+    Parameters
+    ----------
+    E_initial : ndarray
+        Initial point of the trajectory in phase space
+    dataset : set
+        The set of our observed data points
+    ref_level : float
+        The reference level for the trajectory to be computed. Must be in (0, 1)
+    h : float
+        Step size for the ODE solver. Must be > 0
+    k1 : float
+        Tuning parameter for stage 1 of the trajectory computation. Must be > 0
+    k2 : float
+        Tuning parameter for stage 2 of the trajectory computation. Must be > 0
+    delta1 : float
+        Target error for stage 1 of the trajectory computation. Must be < h
+    delta2 : float
+        Target error for stage 2 of the trajectory computation. Must be < h
+    maxcount : int
+        Number of consecutive checks on periodicity before trajectory is 
+        determined to be closed. Defaults to 5
+
+    Returns
+    -------
+    list
+        x-coordinates of the trajectory S
+    list
+        p-coordinates of the trajectory S
+    """
+
+    def trajectory_reached(E, H_r, delta1):
+        """
+        Determines if the solution of the first stage of the modified dynamics
+        has reached the trajectory S to be computed, ie. if H(E) = H_r.
+
+        Parameters
+        ----------
+        E : ndarray
+            Point in phase space
+        H_r : float
+            Reference level for the trajectory to be computed. 0 < H_r < 1
+        delta : float
+            Target error for H
+
+        Returns
+        -------
+        bool
+            True if H(E) is within delta of H_r, False otherwise
+        """
+        return abs(H(E)-H_r) < delta1
+
+    D, H_r = dataset, ref_level
+    S = E_initial
+    t1, t2 = 0, 0
+
+    # Stage 1
+    stage = 1
+    k = k1
+    half = None 
+
+    while not trajectory_reached(S, H_r, delta1):
+        S, half = leapfrog(S, half, dynamics, t1, h)
+        t1 += h
+
+    # Stage 2
+    stage = 2
+    k = k2
+    closed = False
+    count_within_range = 0
+    half = None
+    x_list, p_list = [S[0]], [S[1]] # need to replace with something faster than lists
+
+    while not closed:
+        S, half = leapfrog(S, half, dynamics, t2, h)
+        x_list.append(S[0])
+        p_list.append(S[1])
+        t2 += h
+        S_inspected = np.array([x_list[count_within_range], p_list[count_within_range]])
+        if euclidean(S_inspected, S) < delta2:
+            count_within_range += 1
+        else:
+            if count_within_range > 0:
+                count_within_range = 0
+        if count_within_range >= maxcount:
+            closed = True
+    
+    return x_list[:-maxcount], p_list[:-maxcount]
