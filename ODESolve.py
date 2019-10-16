@@ -72,6 +72,8 @@ def leapfrog(x, half, f, t, h):
     ndarray
         The solution at time t+3h/2
     """
+    if half is None:
+        half = euler(x, f, t, h)
     new_x = x + h*f(half, t + 0.5*h)
     new_half = half + h*f(new_x, t + h)
 
