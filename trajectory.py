@@ -47,6 +47,7 @@ def euclidean(E1, E2):
     float
         Euclidean distance between the two points
     """
+
     return m.sqrt(np.dot(E1-E2, E1-E2))
 
 def H_i(E, E_i):
@@ -66,6 +67,7 @@ def H_i(E, E_i):
     float
         Value at E of gaussian centered at E_i
     """
+
     return m.exp(-euclidean(E, E_i)**2)
 
 def H(E):
@@ -103,8 +105,11 @@ def H_partial(E, var):
     float
         Value of H_var at point E
     """
+
     var_dict = {'x': 0, 'p': 1}
+
     assert var in var_dict.keys()
+
     idx = var_dict[var]
     return sum(-2*(E[idx]-E_i[idx])*H_i(E, E_i) for E_i in D)
 
@@ -129,7 +134,9 @@ def f(E, k, stage):
     float
         Value of f at point E
     """
+
     assert stage in (1, 2)
+
     if stage == 1:
         return k/(H_partial(E, 'x')**2 + H_partial(E, 'p')**2)
     else:
@@ -152,8 +159,10 @@ def dynamics(E, t):
     float
         Value of the time derivatives at (E, t)
     """
+
     Hx, Hp, diff, mod = H_partial(E, 'x'), H_partial(E, 'p'), H(E)-H_r, f(E, k, stage)
     dxdt, dpdt = mod*(Hp - Hx*diff**(1/3)), -mod*(Hx + Hp*diff**(1/3))
+
     return np.array([dxdt, dpdt], float)
 
 def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2, maxcount=5):
@@ -210,6 +219,7 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
         bool
             True if H(E) is within delta of H_r, False otherwise
         """
+        
         return abs(H(E)-H_r) < delta1
 
     D, H_r = dataset, ref_level
