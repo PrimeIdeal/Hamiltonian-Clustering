@@ -18,4 +18,4 @@ Future developments:
 equations, numerical integration
 - adapt our implementation to match the refinements in Casagrande, Astolfi and 
 Sassano's 2012 paper on Hamiltonian clustering
-- Pytorch deployment
+- Pytorch tensor deployment
