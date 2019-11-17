@@ -100,7 +100,7 @@ def MC_mean_value(f, x_range, p_range, N, random_gen=None):
     float
         The value of the integral over the specified domain
     """    
-
+    pass
 
 # Testing
 
