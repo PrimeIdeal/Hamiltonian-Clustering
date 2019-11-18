@@ -32,9 +32,9 @@ def gen_uniform(x_range, p_range, N):
     Parameters
     ----------
     x_range : ndarray
-        The x boundaries of the hypercube
+        The x boundaries of the rectangle
     p_range : ndarray
-        The p boundaries of the hypercube
+        The p boundaries of the rectangle
     N : int
         The number of values to be generated
 
@@ -59,9 +59,9 @@ def gen_gaussian(x_range, p_range, N):
     Parameters
     ----------
     x_range : ndarray
-        The x boundaries of the hypercube
+        The x boundaries of the rectangle
     p_range : ndarray
-        The p boundaries of the hypercube
+        The p boundaries of the rectangle
     N : int
         The number of values to be generated
 
