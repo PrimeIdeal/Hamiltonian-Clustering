@@ -114,7 +114,7 @@ def gen_hypercube(x_range, p_range, N):
         p_idx = r.randint(0, len(p_samples) - 1)
         yield np.array([x_samples.pop(x_idx), p_samples.pop(p_idx)])
 
-def winding_integrand(E_i, E, H_r):
+def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
     the domain enclosed by the trajectory.
@@ -125,8 +125,6 @@ def winding_integrand(E_i, E, H_r):
         number
     E : ndarray
         A point in phase space
-    H_r : float
-        Reference level of the trajectory
     
     Returns
     -------
@@ -135,13 +133,10 @@ def winding_integrand(E_i, E, H_r):
     """
 
     x_diff, p_diff = E_i[0] - E[0], E_i[1] - E[1]
+    
+    return 2*x_diff*p_diff/(m.pi*(x_diff**2 + p_diff**2)**2)
 
-    if H(E) < H_r:
-        return 0
-    else:
-        return 2*x_diff*p_diff/(m.pi*(x_diff**2 + p_diff**2)**2)
-
-def MC_mean_value(f, H_r, x_range, p_range, N, random_gen=None):
+def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
     """
     Computes the integral of f over a rectangular domain in phase space 
     defined by (x_range, p_range) using the mean value Monte Carlo method 
@@ -151,15 +146,20 @@ def MC_mean_value(f, H_r, x_range, p_range, N, random_gen=None):
     ----------
     f : function
         The integrand
+    E_i : ndarray
+        The reference point of the integrand in phase space
     x_range : ndarray
         The x boundaries of the domain of integration
     p_range : ndarray
         The p boundaries of the domain of integration
     N : int
         The number of samples to be used
+    H_r : float
+        The reference level of the trajectory
     random_gen : str
-        Optional: the random number distribution to be used. If none 
-        specified, defaults to 2D uniform
+        Optional: the random number distribution to be used. Currently
+        supports 'uniform', 'gaussian', 'hypercube'. If none specified, 
+        defaults to 2D uniform
 
     Returns
     -------
@@ -170,7 +170,20 @@ def MC_mean_value(f, H_r, x_range, p_range, N, random_gen=None):
     assert x_range[1] > x_range[0]
     assert p_range[1] > p_range[0]
 
+    gen_dict = {'uniform': gen_uniform, 'gaussian': gen_gaussian,
+                    'hypercube': gen_hypercube}
+    random_gen = random_gen.lower()
+
+    assert random_gen in gen_dict.keys()
+
     V = (x_range[1]-x_range[0])*(p_range[1]-p_range[0])
+    integral = 0
+
+    for E in gen_dict[random_gen](x_range, p_range, N):
+        if H(E) >= H_r:
+            integral += winding_integrand(E_i, E)
+    
+    return V*integral/N 
 
     
 
