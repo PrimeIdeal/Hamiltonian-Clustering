@@ -171,10 +171,11 @@ def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
     assert p_range[1] > p_range[0]
 
     gen_dict = {'uniform': gen_uniform, 'gaussian': gen_gaussian,
-                'hypercube': gen_hypercube}
-    random_gen = random_gen.lower()
-
-    assert random_gen in gen_dict.keys()
+                'hypercube': gen_hypercube, None: gen_gaussian}
+    
+    if random_gen is not None:
+        random_gen = random_gen.lower()
+        assert random_gen in gen_dict.keys()
 
     V = (x_range[1]-x_range[0])*(p_range[1]-p_range[0])
     integral = 0
