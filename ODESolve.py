@@ -13,7 +13,8 @@ Guidelines:
     per function call
     - solvers should accept a time argument even if the solution has no
     explicit time dependence
-    - solvers must be implementations of time-reversal symmetric algorithms
+    - for now, solvers should be implementations of time-reversal symmetric 
+    algorithms (although we might be able to relax this restriction)
 
 Requirements: numpy, math
 
