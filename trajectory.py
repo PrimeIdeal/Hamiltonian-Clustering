@@ -211,7 +211,7 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
             Point in phase space
         H_r : float
             Reference level for the trajectory to be computed. 0 < H_r < 1
-        delta : float
+        delta1 : float
             Target error for H
 
         Returns
