@@ -12,7 +12,7 @@ area enclosed by Y:
 If w(E_i, Y) = 1, then E_i is enclosed by Y. If w(E_i, Y) = 0, then E_i 
 is not enclosed by Y.
 
-Requirements: numpy, random, math, trajectory
+Requirements: math, trajectory, random_generators
 
 Date            Author              Description
 10/24/2019      Pierre Gauvreau     initial version - latin hypercube
