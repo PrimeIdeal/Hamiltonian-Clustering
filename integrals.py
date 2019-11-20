@@ -118,6 +118,7 @@ def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
     the domain enclosed by the trajectory.
+    
     Parameters
     ----------
     E_i : ndarray
