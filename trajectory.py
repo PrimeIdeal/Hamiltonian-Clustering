@@ -165,7 +165,7 @@ def dynamics(E, t):
 
     return np.array([dxdt, dpdt], float)
 
-def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2, maxcount=5):
+def compute_trajectory(E_initial, data, H_r, h, k1, k2, delta1, delta2, maxcount=5):
     """
     Computes trajectory corresponding to E_initial and reference level ref_level, subject
     to the Hamiltonian defined by the points in dataset.
@@ -174,8 +174,8 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
     ----------
     E_initial : ndarray
         Initial point of the trajectory in phase space
-    dataset : set
-        The set of our observed data points
+    data : array
+        The array of our observed data points
     ref_level : float
         The reference level for the trajectory to be computed. Must be in (0, 1)
     h : float
@@ -211,7 +211,7 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
             Point in phase space
         H_r : float
             Reference level for the trajectory to be computed. 0 < H_r < 1
-        delta1 : float
+        delta : float
             Target error for H
 
         Returns
@@ -222,7 +222,7 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
         
         return abs(H(E)-H_r) < delta1
 
-    D, H_r = dataset, ref_level
+    D, H_r = data, ref_level
     S = E_initial
     t1, t2 = 0, 0
 
@@ -231,9 +231,21 @@ def compute_trajectory(E_initial, dataset, ref_level, h, k1, k2, delta1, delta2,
     k = k1
     half = None 
 
-    while not trajectory_reached(S, H_r, delta1):
+    # ADDITIONAL FEATURES
+    # -------------------
+    # add visualization/analysis for optimizing convergeance
+    # output E_current at each step
+    
+    # add convergence counter
+    iter_counter = 0
+    iter_max = 1000
+
+    # conditional 1 on reaching target accuracy of delta1 w.r.t. |H(E) - H_r|
+    # conditional 2 on reaching maximum of 1000 iterations
+    while not trajectory_reached(S, H_r, delta1) and iter_counter <= iter_max:
         S, half = leapfrog(S, half, dynamics, t1, h)
         t1 += h
+        iter_counter = iter_counter + 1
 
     # Stage 2
     stage = 2
