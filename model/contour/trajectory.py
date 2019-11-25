@@ -29,7 +29,7 @@ Date            Author              Description
 
 import numpy as np 
 import math as m
-from ODESolve import leapfrog
+from model.math.ODESolve import leapfrog as leapfrog
 
 def euclidean(E1, E2):
     """

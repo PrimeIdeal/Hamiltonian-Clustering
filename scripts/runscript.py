@@ -11,9 +11,12 @@ import pandas as pd
 import os
 
 # custom modules
-import trajectory
-from ODESolve import leapfrog
-import integrals
+import model.contour.trajectory as trajectory
+from model.math.ODESolve import leapfrog as leapfrog
+import model.math.integrals as integrals
+
+# temporary directory force
+os.chdir(r'C:\dev\Hamiltonian-Clustering')
 
 # obtain data directory
 data_dir = hc_config['data_dir']
