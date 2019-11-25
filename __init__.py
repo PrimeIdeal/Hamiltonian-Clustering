@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 25 15:59:15 2019
+Created on Mon Nov 25 16:30:10 2019
 
-@author: Grisha
+@author: Grisha Ivanov, Pierre Gauvreau
 """
 
