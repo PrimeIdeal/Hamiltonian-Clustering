@@ -43,62 +43,6 @@ import numpy as np
 import math as m 
 import trajectory as tr
 
-# Helper functions
-
-def rho(E1, E2, step, delta):
-    """
-    Helper function for AdaptiveRK4.update_E().
-
-    Computes the ratio of actual to target accuracy for a given
-    step size h, target accuracy delta, and two estimates E1, E2
-    of E(t+2h).
-
-    Parameters
-    ----------
-    E1 : ndarray
-        A point in phase space
-    E2 : ndarray
-        A point in phase space
-    step : float
-        Designated step size
-    delta : float
-        Designated target accuracy
-
-    Returns
-    -------
-    float
-        Ratio of actual to target accuracy
-    """
-
-    diff = E1 - E2
-    return 30*step*delta/m.sqrt(np.dot(diff, diff))
-
-def FixedRK4(E, f, t, step):
-    """
-    Helper function for AdaptiveRK4.update_E().
-
-    A single iteration of the RK4 algorithm with fixed step size.
-
-    Parameters
-    ----------
-    E : ndarray
-        A point in phase space
-    f : function
-        The ODE system to be solved
-    t : float
-        current time
-    step : float
-        a new step size passed in by AdaptiveRK4
-    """
-
-    k1 = step*f(E, t)
-    k2 = step*f(E + 0.5*k1, t + 0.5*step)
-    k3 = step*f(E + 0.5*k2, t + 0.5*step)
-    k4 = step*f(E + k3, t + step)
-
-    return E + (k1+2*k2+2*k3+k4)/6
-
-# Solver classes
 
 class ODESolver(ABC):
     """
@@ -140,6 +84,13 @@ class ODESolver(ABC):
         self._num_steps = 0
         self._closed_count = 0
 
+    def update_trajectory(self):
+        """
+        Adds E_curr's coordinates to x_list and p_list
+        """
+        self._x_list.append(self._E_curr[0])
+        self._p_list.append(self._E_curr[1])
+
     def trajectory_reached(self):
         """
         Determines if the solution of the first stage of the modified dynamics 
@@ -151,7 +102,7 @@ class ODESolver(ABC):
             True if H(E) is within delta of H_r, False otherwise
         """
 
-        return abs(tr.H(self._E_curr)-self._H_r) < self._delta[0]
+        return abs(tr.H(self._D, self._E_curr)-self._H_r) < self._delta[0]
 
     def trajectory_closed(self, min_count):
         """
@@ -162,8 +113,8 @@ class ODESolver(ABC):
         Parameters
         ----------
         min_count : int
-            Minimum number of consecutive trajectory points S[i+k] within required
-            distance of points S[i] to declare S closed
+            Minimum number of consecutive trajectory points S[i+k] within specified
+            distance of points S[i] required to declare S closed
 
         Returns
         -------
@@ -204,7 +155,7 @@ class ODESolver(ABC):
 class Leapfrog(ODESolver):
     """
     Solves both stages of the dynamical system using the leapfrog algorithm.
-    Time-reversal symmetry is guaranteed.
+    Time-reversal symmetry is guaranteed
 
     Attributes
     ----------
@@ -215,11 +166,11 @@ class Leapfrog(ODESolver):
         the solution
     H_r : float
         Reference level for the trajectory to be computed. Must be in (0, 1)
-    delta : tuple(float, float)
+    delta : tuple(float)
         Target accuracy parameters for stages 1 and 2 of the solution
-    x_list : list(float)
+    x_list : list
         The ordered x-coordinates of the solution
-    p_list : list(float)
+    p_list : list
         The ordered p-coordinates of the solution
     num_steps : int
         The current number of steps required to compute the trajectory
@@ -232,30 +183,15 @@ class Leapfrog(ODESolver):
     def __init__(self, D, H_r, delta):
         ODESolver.__init__(self, D, H_r, delta)
 
-    def _euler(self, E, h, k, stage):
+    def _euler(self, h, k, stage):
         """
         Helper function for Leapfrog.solve(). 
 
         Executes a single iteration of Euler's method with time step h/2: Given 
         x(t), returns x(t+h/2).
-
-        Parameters
-        ----------
-        E : ndarray
-            The solution at time t
-        h : float
-            Step size for leapfrog algorithm
-        k : tuple(float, float)
-            Tuning parameters for the modifying function
-        
-
-        Returns
-        -------
-        ndarray
-            The solution at time t+h/2
         """
 
-        return E + 0.5*h*tr.dynamics(D, E, self._H_r, k, stage)
+        return self._E_curr + 0.5*h*tr.dynamics(self._D, self._E_curr, self._H_r, k, stage)
     
     def solve(self, E_initial, h, k, min_count=5):
         """
@@ -287,100 +223,165 @@ class Leapfrog(ODESolver):
         
         # Stage 1
 
-        half = self._euler(self._E_curr, h, k, 1)
+        half = self._euler(h, k, 1)
         while not self.trajectory_reached():
             self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 1, k)
             half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 1, k)
 
         # Stage 2
 
-        self._x_list.append(self._E_curr[0])
-        self._p_list.append(self._E_curr[1])
+        self.update_trajectory()
 
-        half = self._euler(self._E_curr, h, k, 2)
+        half = self._euler(h, k, 2)
         while not self.trajectory_closed(min_count):
             self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 2, k)
             half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 2, k)
-            self._x_list.append(self._E_curr[0])
-            self._p_list.append(self._E_curr[1])
+            self.update_trajectory()
 
         return self._x_list[:-min_count], self._p_list[:-min_count]
 
 class AdaptiveRK4(ODESolver):
     """
-    """
+    Solves both stages of the dynamical system using Adaptive RK4.
+    Time-reversal symmetry is not guaranteed
 
-    def __init__(self):
-        ODESolver.__init__(self)
-
-    def solve(self, step_size, k):
-        pass
-
-
-def leapfrog(E, half, f, t, h):
-    """
-    Executes a single iteration of the leapfrog algorithm with time step h.
-    Given x(t) and x(t+h/2), returns x(t+h) and x(t+3h/2).
-
-    Parameters
+    Attributes
     ----------
-    E : ndarray
-        The solution at time t
-    half : ndarray
-        The solution at time t+h/2
-    f : function
-        The system to be solved
-    t : float
-        Current time
-    h : float
-        Step size for leapfrog algorithm
-
-    Returns
-    -------
-    ndarray
-        The solution at time t+h
-    ndarray
-        The solution at time t+3h/2
-    """
-    if half is None:
-        half = euler(E, f, t, h)
-    new_E = E + h*f(half, t + 0.5*h)
-    new_half = half + h*f(new_E, t + h)
-
-    return new_E, new_half
-
-def AdaptiveRK4(E, f, t, h, delta):
-    """
-    A single iteration of Adaptive RK4.
-
-    Parameters
-    ----------
-    E : ndarray
-        A point in phase space
-    f : function
-        The ODE system to be solved
-    t : float
-        Current time
-    h : float
-        Initial step size
-    delta : float
-        Target accuracy
-
-    Returns
-    -------
-    ndarray
-        A point in phase space
-    float
-        The new step size
+    D : set(ndarray)
+        The data set containing our observed points in phase space
+    E_curr : ndarray
+        A point in phase space. The most recently computed point of
+        the solution
+    H_r : float
+        Reference level for the trajectory to be computed. Must be in (0, 1)
+    delta : tuple(float)
+        Target accuracy parameters for stages 1 and 2 of the solution
+    x_list : list
+        The ordered x-coordinates of the solution
+    p_list : list
+        The ordered p-coordinates of the solution
+    num_steps : int
+        The current number of steps required to compute the trajectory
+        of the dynamical system
+    closed_count : int
+        The current number of consecutive trajectory points S[i+k] within
+        required distance of points S[i]
+    step_delta : float
+        Target accuracy parameter for the adaptive step
     """
 
-    ratio = 0
-    step = h 
+    def __init__(self, D, H_r, delta, step_delta):
+        ODESolver.__init__(self, D, H_r, delta)
+        self._step_delta = step_delta
 
-    while ratio < 1:
-        E1 = FixedRK4(FixedRK4(E, f, t, step), f, t+step, step)
-        E2 = FixedRK4(E, f, t, 2*step)
-        ratio = rho(E1, E2, step, delta)
-        step = step*ratio**(1/4)
+    def _rho(self, E1, E2, step):
+        """
+        Helper function for AdaptiveRK4._adaptive_step().
 
-    return FixedRK4(E, f, t, step), step
+        Computes the ratio of actual to target accuracy for a given
+        step size h, target accuracy delta, and two estimates E1, E2
+        of E(t+2h).
+
+        Parameters
+        ----------
+        E1 : ndarray
+            A point in phase space
+        E2 : ndarray
+            A point in phase space
+        step : float
+            Designated step size
+
+        Returns
+        -------
+        float
+            Ratio of actual to target accuracy
+        """
+
+        diff = E1 - E2
+        return 30*step*self._step_delta/m.sqrt(np.dot(diff, diff))
+
+    def _fixed_step(self, E, stage, k, step):
+        """
+        Helper function for AdaptiveRK4.solve().
+
+        A single iteration of the RK4 algorithm with fixed step size.
+
+        Parameters
+        ----------
+        E : ndarray
+            A point in phase space
+        stage : int
+            The current stage of the trajectory computation
+        k : tuple(float, float)
+            Tuning parameters for the modifying function
+        step : float
+            A new step size passed in by AdaptiveRK4
+        """
+
+        k1 = step*tr.dynamics(self._D, E, self._H_r, stage, k)
+        k2 = step*tr.dynamics(self._D, E + 0.5*k1, self._H_r, stage, k)
+        k3 = step*tr.dynamics(self._D, E + 0.5*k2, self._H_r, stage, k)
+        k4 = step*tr.dynamics(self._D, E + k3, self._H_r, stage, k)
+
+        return E + (k1+2*k2+2*k3+k4)/6
+
+    def solve(self, E_initial, h, k, min_count=5):
+        """
+        Implements Adaptive RK4 to solve dynamical system
+
+        Parameters
+        ----------
+        E_initial : ndarray
+            A point in phase space. Initial condition of the dynamical
+            system
+        h : float
+            The step size used by the algorithm
+        k : tuple(float, float)
+            Tuning parameters for the modifying function of the dynamical
+            system
+        min_count : int
+            Number of consecutive checks on periodicity before trajectory
+            is determined to be closed. Defaults to 5
+
+        Returns
+        -------
+        list(float)
+            The ordered x-coordinates of the solution trajectory S
+        list(float)
+            The ordered p-coordinates of the solution trajectory S
+        """
+
+        self._E_curr = E_initial
+
+        # Stage 1
+
+        while not self.trajectory_reached():
+            ratio = 0
+            step = h
+
+            while ratio < 1:
+                E1 = self._fixed_step(self._fixed_step(self._E_curr, 1, k, step), 1, k, step)
+                E2 = self._fixed_step(self._E_curr, 1, k, 2*step)
+                ratio = self._rho(E1, E2, step)
+                step *= ratio**(1/4)
+
+            self._E_curr = self._fixed_step(self._E_curr, 1, k, step)
+
+        # Stage 2
+
+        self.update_trajectory()
+
+        while not self.trajectory_closed(min_count):
+            ratio = 0
+            step = h
+
+            while ratio < 1:
+                E1 = self._fixed_step(self._fixed_step(self._E_curr, 2, k, step), 2, k, step)
+                E2 = self._fixed_step(self._E_curr, 2, k, 2*step)
+                ratio = self._rho(E1, E2, step)
+                step *= ratio**(1/4)
+
+            self._E_curr = self._fixed_step(self._E_curr, 2, k, step)
+            self.update_trajectory()
+
+        return self._x_list[:-min_count], self._p_list[:-min_count]
