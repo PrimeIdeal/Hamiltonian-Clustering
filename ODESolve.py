@@ -8,11 +8,25 @@ where
     x = (x1, x2, ..., xn)
     f(x, t) = (f_x1(x, t), f_x2(x, t), ..., f_xn(x, t))
 
+General approach: given data set D = {E_1, E_2, ..., E_n} in phase space where
+E_i = (x_i, p_i), define the Hamiltonian function
+    H(E) = sum(H_i(E)) for i in [1, N]
+where
+    H_i(E) = exp(-rho(E)^2)
+    rho = ||E - E_i|| (Euclidean distance)
+We select 0 < H_r < 1 and k1, k2 > 0, then pick E_i in D as an initial
+condition to solve the modified dynamics
+    dx/dt = f_1(x, p)(H_p - H_x(H - H_r)^1/3)
+    dp/dt = f_1(x, p)(H_x + H_p(H - H_r)^1/3)
+until we reach time t where H(E(t)) = H_r, where H_x, H_p are the partial 
+derivatives of H with respect to x and p and
+    f_1(x, p) = k1(H_x^2 + H_p^2)^-1
+We then repeat the process, using E(t) as our initial condition and
+replacing f_1(x, p) with
+    f_2(x, p) = k2(H_x^2 + H_p^2)^-1/2
+until we have computed a closed trajectory S.
+
 Guidelines:
-    - for now, the DE solvers should execute a single step of the solution
-    per function call
-    - solvers should accept a time argument even if the solution has no
-    explicit time dependence
     - for now, solvers should be implementations of time-reversal symmetric 
     algorithms (although we might be able to relax this restriction)
 
@@ -27,35 +41,9 @@ Date            Author              Description
 from abc import ABC, abstractmethod
 import numpy as np 
 import math as m 
-from trajectory import dynamics, euclidean
+import trajectory as tr
 
 # Helper functions
-
-def euler(E, f, t, h):
-    """
-    Helper function for Leapfrog.update_E(). 
-
-    Executes a single iteration of Euler's method with time step h/2: Given 
-    x(t), returns x(t+h/2).
-
-    Parameters
-    ----------
-    E : ndarray
-        The solution at time t
-    f : function
-        The system to be solved
-    t : float
-        Current time
-    h : float
-        Step size for leapfrog algorithm
-
-    Returns
-    -------
-    ndarray
-        The solution at time t+h/2
-    """
-
-    return E + 0.5*h*f(E, t)
 
 def rho(E1, E2, step, delta):
     """
@@ -127,11 +115,7 @@ class ODESolver(ABC):
         A point in phase space. The most recently computed point of
         the solution
     H_r : float
-        Reference level for the trajectory to be computed. 0 < H_r < 1
-    step_size : float
-        The step size used to compute the solution
-    k : tuple(float)
-        Tuning parameters for the modifying function f
+        Reference level for the trajectory to be computed. Must be in (0, 1)
     delta : tuple(float)
         Target accuracy parameters for stages 1 and 2 of the solution
     x_list : list
@@ -146,17 +130,15 @@ class ODESolver(ABC):
         required distance of points S[i]
     """
 
-    def __init__(self, D, E_initial, H_r, step_size, k, delta):
-        self.D = D
-        self.E_curr = E_initial
-        self.H_r = H_r
-        self.step_size = step_size
-        self.k = k
-        self.delta = delta
-        self.x_list = []
-        self.p_list = []
-        self.num_steps = 0
-        self.closed_count = 0
+    def __init__(self, D, H_r, delta):
+        self._D = D
+        self._E_curr = None
+        self._H_r = H_r
+        self._delta = delta
+        self._x_list = []
+        self._p_list = []
+        self._num_steps = 0
+        self._closed_count = 0
 
     def trajectory_reached(self):
         """
@@ -168,9 +150,10 @@ class ODESolver(ABC):
         bool
             True if H(E) is within delta of H_r, False otherwise
         """
-        return abs(H(self.E_curr)-self.H_r) < self.delta[0]
 
-    def is_closed(self, min_count):
+        return abs(tr.H(self._E_curr)-self._H_r) < self._delta[0]
+
+    def trajectory_closed(self, min_count):
         """
         Determines if the solution of the second stage of the modified dynamics
         has achieved a closed trajectory, ie. if there exists T such that 
@@ -187,14 +170,16 @@ class ODESolver(ABC):
         bool
             True if S is closed, False otherwise
         """
-        ref_pt = np.array([self.x_list[self.closed_count], self.p_list[self.closed_count]])
-        if euclidean(ref_pt, self.E_curr) < self.delta[1]:
-            self.closed_count += 1
-            if self.closed_count == min_count:
+
+        ref_pt = np.array([self._x_list[self._closed_count], self._p_list[self._closed_count]])
+
+        if tr.euclidean(ref_pt, self._E_curr) < self._delta[1]:
+            self._closed_count += 1
+            if self._closed_count == min_count:
                 return True
         else:
-            if self.closed_count > 0:
-                self.closed_count = 0
+            if self._closed_count > 0:
+                self._closed_count = 0
         return False
 
     def get_steps(self):
@@ -207,23 +192,119 @@ class ODESolver(ABC):
         int
             Current number of steps
         """
-        return self.num_steps
+
+        return self._num_steps
             
 
     @abstractmethod
-    def solve():
+    def solve(self):
         pass
 
 
 class Leapfrog(ODESolver):
     """
+    Solves both stages of the dynamical system using the leapfrog algorithm.
+    Time-reversal symmetry is guaranteed.
+
+    Attributes
+    ----------
+    D : set(ndarray)
+        The data set containing our observed points in phase space
+    E_curr : ndarray
+        A point in phase space. The most recently computed point of
+        the solution
+    H_r : float
+        Reference level for the trajectory to be computed. Must be in (0, 1)
+    delta : tuple(float, float)
+        Target accuracy parameters for stages 1 and 2 of the solution
+    x_list : list(float)
+        The ordered x-coordinates of the solution
+    p_list : list(float)
+        The ordered p-coordinates of the solution
+    num_steps : int
+        The current number of steps required to compute the trajectory
+        of the dynamical system
+    closed_count : int
+        The current number of consecutive trajectory points S[i+k] within
+        required distance of points S[i]
     """
 
-    def __init__(self):
-        ODESolver.__init__(self)
+    def __init__(self, D, H_r, delta):
+        ODESolver.__init__(self, D, H_r, delta)
+
+    def _euler(self, E, h, k, stage):
+        """
+        Helper function for Leapfrog.solve(). 
+
+        Executes a single iteration of Euler's method with time step h/2: Given 
+        x(t), returns x(t+h/2).
+
+        Parameters
+        ----------
+        E : ndarray
+            The solution at time t
+        h : float
+            Step size for leapfrog algorithm
+        k : tuple(float, float)
+            Tuning parameters for the modifying function
+        
+
+        Returns
+        -------
+        ndarray
+            The solution at time t+h/2
+        """
+
+        return E + 0.5*h*tr.dynamics(D, E, self._H_r, k, stage)
     
-    def update_E(self):
-        pass
+    def solve(self, E_initial, h, k, min_count=5):
+        """
+        Implements leapfrog algorithm to solve dynamical system
+
+        Parameters
+        ----------
+        E_initial : ndarray
+            A point in phase space. Initial condition of the dynamical
+            system
+        h : float
+            The step size used by the algorithm
+        k : tuple(float, float)
+            Tuning parameters for the modifying function of the dynamical
+            system
+        min_count : int
+            Number of consecutive checks on periodicity before trajectory
+            is determined to be closed. Defaults to 5
+
+        Returns
+        -------
+        list(float)
+            The ordered x-coordinates of the solution trajectory S
+        list(float)
+            The ordered p-coordinates of the solution trajectory S
+        """
+
+        self._E_curr = E_initial
+        
+        # Stage 1
+
+        half = self._euler(self._E_curr, h, k, 1)
+        while not self.trajectory_reached():
+            self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 1, k)
+            half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 1, k)
+
+        # Stage 2
+
+        self._x_list.append(self._E_curr[0])
+        self._p_list.append(self._E_curr[1])
+
+        half = self._euler(self._E_curr, h, k, 2)
+        while not self.trajectory_closed(min_count):
+            self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 2, k)
+            half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 2, k)
+            self._x_list.append(self._E_curr[0])
+            self._p_list.append(self._E_curr[1])
+
+        return self._x_list[:-min_count], self._p_list[:-min_count]
 
 class AdaptiveRK4(ODESolver):
     """
@@ -232,7 +313,7 @@ class AdaptiveRK4(ODESolver):
     def __init__(self):
         ODESolver.__init__(self)
 
-    def update_E(self):
+    def solve(self, step_size, k):
         pass
 
 
