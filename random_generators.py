@@ -88,20 +88,19 @@ def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
     ndarray
         A point in phase space
     """
-
     x_step, p_step = (np.diff(x_range).item() / num_pts,
-                      np.diff(x_range).item() / num_pts)
+                      np.diff(p_range).item() / num_pts)
     unit_x_box = x_range[0], x_range[0] + x_step
     unit_p_box = p_range[0], p_range[0] + p_step
-    rand_x_points = rand_pt_gen(unit_x_box, p_range, num_pts)
-    rand_p_points = rand_pt_gen(unit_p_box, p_range, num_pts)
+    rand_points = rand_pt_gen(unit_x_box, unit_p_box, num_pts)
     pt_range = list(range(num_pts))
     x_indices = r.sample(pt_range, k=num_pts)
     p_indices = r.sample(pt_range, k=num_pts)
 
     for i in range(num_pts):
-        yield np.array([next(rand_x_points) + x_indices[i] * x_step,
-                        next(rand_p_points) + p_indices[i] * p_step])
+        rand_x, rand_p = next(rand_points)
+        yield np.array([rand_x + x_indices[i] * x_step,
+                        rand_p + p_indices[i] * p_step])
 
 # Testing
 
