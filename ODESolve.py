@@ -133,7 +133,8 @@ class ODESolver(ABC):
                 self._closed_count = 0
         return False
 
-    def get_steps(self):
+    @property
+    def num_steps(self):
         """
         Returns the current number of iterations used during the trajectory
         calculation
@@ -145,7 +146,6 @@ class ODESolver(ABC):
         """
 
         return self._num_steps
-            
 
     @abstractmethod
     def solve(self):
