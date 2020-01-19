@@ -25,6 +25,7 @@ import math as m
 from trajectory import H
 import random_generators as r
 
+
 def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
@@ -45,7 +46,8 @@ def winding_integrand(E_i, E):
 
     x_diff, p_diff = E_i[0] - E[0], E_i[1] - E[1]
     
-    return 2*x_diff*p_diff/(m.pi*(x_diff**2 + p_diff**2)**2)
+    return 2 * x_diff * p_diff / (m.pi * (x_diff ** 2 + p_diff ** 2) ** 2)
+
 
 def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
     """
@@ -95,4 +97,4 @@ def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
         if H(E) >= H_r:
             integral += winding_integrand(E_i, E)
     
-    return V*integral/N 
+    return V*integral/N
