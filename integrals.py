@@ -22,8 +22,8 @@ Date            Author              Description
 """
 
 import math as m 
-from model.contour.trajectory import H
-import utils.generators.random_generators as r
+from trajectory import H
+import random_generators as r
 
 
 def winding_integrand(E_i, E):
@@ -50,7 +50,7 @@ def winding_integrand(E_i, E):
     return 2 * x_diff * p_diff / (m.pi * (x_diff ** 2 + p_diff ** 2) ** 2)
 
 
-def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
+def MC_mean_value(f, D, E_i, H_r, x_range, p_range, N, random_gen=None):
     """
     Computes the integral of f over a rectangular domain in phase space 
     defined by (x_range, p_range) using the mean value Monte Carlo method 
@@ -60,6 +60,8 @@ def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
     ----------
     f : function
         The integrand
+    D : set(ndarray)
+        The data set containing our observed points in phase space
     E_i : ndarray
         The reference point of the integrand in phase space
     x_range : ndarray
@@ -95,7 +97,7 @@ def MC_mean_value(f, E_i, H_r, x_range, p_range, N, random_gen=None):
     integral = 0
 
     for E in gen_dict[random_gen](x_range, p_range, N):
-        if H(E) >= H_r:
+        if H(D, E) >= H_r:
             integral += winding_integrand(E_i, E)
     
     return V*integral/N
