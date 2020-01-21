@@ -22,14 +22,15 @@ Date            Author              Description
 """
 
 import math as m 
-from trajectory import H
-import random_generators as r
+from model.contour.trajectory import H
+import utils.generators.random_generators as r
 
 
 def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
     the domain enclosed by the trajectory.
+    
     Parameters
     ----------
     E_i : ndarray
