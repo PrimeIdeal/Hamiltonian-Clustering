@@ -1,6 +1,6 @@
 # Hamiltonian-Clustering
 
-### Authors: Pierre Gauvreau, Grisha Ivanov
+### Authors: Pierre Gauvreau, Keirn Munro, Grisha Ivanov
 
 An implementation of the algorithm proposed by Daniele Casagrande and Alessandro 
 Astolfi in their 2008 paper "A Hamiltonian-Based Algorithm for Measurements 
