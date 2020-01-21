@@ -12,7 +12,8 @@ Date            Author              Description
 import numpy as np 
 import random as r
 
-def gen_uniform(x_range, p_range, N):
+
+def gen_uniform(x_range, p_range, num_pts):
     """
     Generates uniform random values of (x, p) in the rectangle specified
     by (x_range, p_range) in phase space.
@@ -23,7 +24,7 @@ def gen_uniform(x_range, p_range, N):
         The x boundaries of the rectangle
     p_range : ndarray
         The p boundaries of the rectangle
-    N : int
+    num_pts : int
         The number of values to be generated
 
     Yields
@@ -31,13 +32,11 @@ def gen_uniform(x_range, p_range, N):
     ndarray
         A point in phase space
     """
+    for _i in range(num_pts):
+        pt_x = r.uniform(*list(x_range))
+        pt_p = r.uniform(*list(p_range))
+        yield np.array([pt_x, pt_p])
 
-    x0, x1, p0, p1 = x_range[0], x_range[1], p_range[0], p_range[1]
-    x_dist, p_dist = x1-x0, p1-p0
-
-    for _i in range(N):
-        x, p = x0 + x_dist*r.random(), p0 + p_dist*r.random()
-        yield np.array([x, p])
 
 def gen_gaussian(x_range, p_range, N):
     """
@@ -59,17 +58,18 @@ def gen_gaussian(x_range, p_range, N):
         A point in phase space
     """
 
-    x0, x1, p0, p1 = x_range[0], x_range[1], p_range[0], p_range[1]
-    x_dist, p_dist = x1-x0, p1-p0
-
-    mu_x, mu_p = x0 + x_dist/2, p0 + p_dist/2
-    sigma_x, sigma_p = 1/3, 1/3 # I will make this user-specifiable later
+    assert len(x_range) == len(p_range) == 2
+    mu_x, mu_p = (x_range[0] + np.diff(x_range).item() / 2,
+                  p_range[0] + np.diff(p_range).item() / 2)
+    sigma_x, sigma_p = 1 / 3, 1 / 3  # I will make this user-specifiable later
     
     for _i in range(N):
-        x, p = mu_x + mu_x*r.gauss(0, sigma_x)%1, mu_p + mu_p*r.gauss(0, sigma_p)%1
-        yield np.array([x, p])
+        x_pt, p_pt = (mu_x + mu_x * r.gauss(0, sigma_x) % 1,
+                      mu_p + mu_p * r.gauss(0, sigma_p) % 1)
+        yield np.array([x_pt, p_pt])
 
-def gen_hypercube(x_range, p_range, N):
+
+def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
     """
     Generates random values of (x, p) from a 2D uniform latin hypercube
     in phase space.
@@ -80,30 +80,32 @@ def gen_hypercube(x_range, p_range, N):
         The x boundaries of the hypercube
     p_range : ndarray
         The p boundaries of the hypercube
-    N : int
+    num_pts : int
         The number of values to be generated
+    rand_pt_gen : Callable[[ndarray, ndarray, int], ndarray]
+        The random point generator to use for populating values
 
     Yields
     ------
     ndarray
         A point in phase space
     """
+    x_step, p_step = (np.diff(x_range).item() / num_pts,
+                      np.diff(p_range).item() / num_pts)
+    unit_x_box = x_range[0], x_range[0] + x_step
+    unit_p_box = p_range[0], p_range[0] + p_step
+    rand_points = rand_pt_gen(unit_x_box, unit_p_box, num_pts)
+    pt_range = list(range(num_pts))
+    x_indices = r.sample(pt_range, k=num_pts)
+    p_indices = r.sample(pt_range, k=num_pts)
 
-    x0, x1, p0, p1 = x_range[0], x_range[1], p_range[0], p_range[1]
-    x_step, p_step = (x1-x0)/N, (p1-p0)/N
-    x_samples = [x0 + k*x_step + x_step*r.random() for k in range(N)]
-    p_samples = [p0 + k*p_step + p_step*r.random() for k in range(N)]
+    for i in range(num_pts):
+        pt_x, pt_p = next(rand_points)
+        yield np.array([pt_x + x_indices[i] * x_step,
+                        pt_p + p_indices[i] * p_step])
 
-    assert len(x_samples) > 0
-    assert len(p_samples) > 0
-
-    while len(x_samples) > 0:
-        x_idx = r.randint(0, len(x_samples) - 1)
-        p_idx = r.randint(0, len(p_samples) - 1)
-        yield np.array([x_samples.pop(x_idx), p_samples.pop(p_idx)])
 
 # Testing
-
 if __name__ == '__main__':
     import pylab as pl 
 
