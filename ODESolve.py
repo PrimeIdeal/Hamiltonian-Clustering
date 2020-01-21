@@ -133,7 +133,8 @@ class ODESolver(ABC):
                 self._closed_count = 0
         return False
 
-    def get_steps(self):
+    @property
+    def num_steps(self):
         """
         Returns the current number of iterations used during the trajectory
         calculation
@@ -145,7 +146,6 @@ class ODESolver(ABC):
         """
 
         return self._num_steps
-            
 
     @abstractmethod
     def solve(self):
@@ -354,7 +354,6 @@ class AdaptiveRK4(ODESolver):
         self._E_curr = E_initial
 
         # Stage 1
-
         while not self.trajectory_reached():
             ratio = 0
             step = h
@@ -368,7 +367,6 @@ class AdaptiveRK4(ODESolver):
             self._E_curr = self._fixed_step(self._E_curr, 1, k, step)
 
         # Stage 2
-
         self.update_trajectory()
 
         while not self.trajectory_closed(min_count):

@@ -15,9 +15,10 @@ Date            Author              Description
 import numpy as np 
 import math as m
 
+
 def euclidean(E1, E2):
     """
-    Returns Euclidian distance between two points E1 and E2 in phase space
+    Returns Euclidean distance between two points E1 and E2 in phase space
 
     Parameters
     ----------
@@ -32,7 +33,8 @@ def euclidean(E1, E2):
         Euclidean distance between the two points
     """
 
-    return m.sqrt(np.dot(E1-E2, E1-E2))
+    return m.sqrt(np.dot(E1 - E2, E1 - E2))
+
 
 def _H_i(E, E_i):
     """
@@ -41,6 +43,7 @@ def _H_i(E, E_i):
     """
 
     return m.exp(-euclidean(E, E_i)**2)
+
 
 def H(D, E):
     """
@@ -62,6 +65,7 @@ def H(D, E):
 
     return sum(_H_i(E, E_i) for E_i in D)
 
+
 def _H_partial(D, E, var):
     """
     Helper function for dynamics and f. 1st partial derivative of H with 
@@ -73,7 +77,8 @@ def _H_partial(D, E, var):
     assert var in var_dict.keys()
 
     idx = var_dict[var]
-    return sum(-2*(E[idx]-E_i[idx])*_H_i(E, E_i) for E_i in D)
+    return sum(-2 * (E[idx]-E_i[idx]) * _H_i(E, E_i) for E_i in D)
+
 
 def f(D, E, k, stage):
     """
@@ -99,12 +104,15 @@ def f(D, E, k, stage):
         Value of f at point E
     """
 
-    assert stage in (1, 2)
+    assert stage in {1, 2}
+    partial_norm = m.sqrt(
+        _H_partial(D, E, 'x') ** 2 + _H_partial(D, E, 'p') ** 2)
 
     if stage == 1:
-        return k[0]/(_H_partial(D, E, 'x')**2 + _H_partial(D, E, 'p')**2)
+        return k[0] / partial_norm ** 2
     else:
-        return k[1]/m.sqrt(_H_partial(D, E, 'x')**2 + _H_partial(D, E, 'p')**2)
+        return k[1] / partial_norm
+
 
 def dynamics(D, E, H_r, stage, k):
     """
@@ -130,7 +138,8 @@ def dynamics(D, E, H_r, stage, k):
         Value of the time derivatives at (E, t)
     """
 
-    Hx, Hp, diff, mod = _H_partial(D, E, 'x'), _H_partial(D, E, 'p'), H(D, E)-H_r, f(D, E, k, stage)
-    dxdt, dpdt = mod*(Hp - Hx*diff**(1/3)), -mod*(Hx + Hp*diff**(1/3))
-
-    return np.array([dxdt, dpdt], float)
+    Hx, Hp, diff, mod = (_H_partial(D, E, 'x'), _H_partial(D, E, 'p'),
+                         H(D, E) - H_r, f(D, E, k, stage))
+    dx_dt = mod * (Hp - Hx * diff ** (1 / 3))
+    dp_dt = - mod * (Hx + Hp*diff ** (1 / 3))
+    return np.array([dx_dt, dp_dt], float)
