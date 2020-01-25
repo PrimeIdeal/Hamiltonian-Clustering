@@ -7,10 +7,13 @@ random, numpy
 Date            Author              Description
 11/20/2019      Pierre Gauvreau     initial version - uniform, gaussian,
                                     latin hypercube
+01/25/2020      Keirn Munro         Tracking generating functions through an
+                                    enum
 """
 
 import numpy as np 
 import random as r
+from enum import Enum
 
 
 def gen_uniform(x_range, p_range, num_pts):
@@ -103,6 +106,13 @@ def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
         pt_x, pt_p = next(rand_points)
         yield np.array([pt_x + x_indices[i] * x_step,
                         pt_p + p_indices[i] * p_step])
+
+
+class PointGenerators(Enum):
+    """Tracks random point generation functions."""
+    UNIFORM = gen_uniform
+    GAUSSIAN = gen_gaussian
+    HYPERCUBE = gen_hypercube
 
 
 # Testing

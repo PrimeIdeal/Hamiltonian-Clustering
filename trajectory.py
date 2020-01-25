@@ -42,7 +42,7 @@ def _H_i(E, E_i):
     at E_i
     """
 
-    return m.exp(-euclidean(E, E_i)**2)
+    return m.exp(-euclidean(E, E_i) ** 2)
 
 
 def H(D, E):

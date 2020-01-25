@@ -148,7 +148,7 @@ class ODESolver(ABC):
         return self._num_steps
 
     @abstractmethod
-    def solve(self):
+    def solve(self, E_initial, h, k, min_count):
         pass
 
 
