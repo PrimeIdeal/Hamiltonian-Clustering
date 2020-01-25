@@ -26,6 +26,7 @@ import math as m
 from trajectory import H
 from random_generators import PointGenerators
 
+
 def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
