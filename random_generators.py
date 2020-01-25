@@ -7,10 +7,13 @@ random, numpy
 Date            Author              Description
 11/20/2019      Pierre Gauvreau     initial version - uniform, gaussian,
                                     latin hypercube
+01/25/2020      Keirn Munro         Tracking generating functions through an
+                                    enum
 """
 
 import numpy as np 
 import random as r
+from enum import Enum
 
 
 def gen_uniform(x_range, p_range, num_pts):
@@ -38,7 +41,7 @@ def gen_uniform(x_range, p_range, num_pts):
         yield np.array([pt_x, pt_p])
 
 
-def gen_gaussian(x_range, p_range, N):
+def gen_gaussian(x_range, p_range, num_pts):
     """
     Generates gaussian random values of (x, p) in the rectangle specified
     by (x_range, p_range) in phase space.
@@ -49,7 +52,7 @@ def gen_gaussian(x_range, p_range, N):
         The x boundaries of the rectangle
     p_range : ndarray
         The p boundaries of the rectangle
-    N : int
+    num_pts : int
         The number of values to be generated
 
     Yields
@@ -61,9 +64,9 @@ def gen_gaussian(x_range, p_range, N):
     assert len(x_range) == len(p_range) == 2
     mu_x, mu_p = (x_range[0] + np.diff(x_range).item() / 2,
                   p_range[0] + np.diff(p_range).item() / 2)
-    sigma_x, sigma_p = 1 / 3, 1 / 3  # I will make this user-specifiable later
+    sigma_x, sigma_p = 1 / 3, 1 / 3  # TODO: make this user-specifiable
     
-    for _i in range(N):
+    for _i in range(num_pts):
         x_pt, p_pt = (mu_x + mu_x * r.gauss(0, sigma_x) % 1,
                       mu_p + mu_p * r.gauss(0, sigma_p) % 1)
         yield np.array([x_pt, p_pt])
@@ -103,6 +106,13 @@ def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
         pt_x, pt_p = next(rand_points)
         yield np.array([pt_x + x_indices[i] * x_step,
                         pt_p + p_indices[i] * p_step])
+
+
+class PointGenerators(Enum):
+    """Tracks random point generation functions."""
+    UNIFORM = gen_uniform
+    GAUSSIAN = gen_gaussian
+    HYPERCUBE = gen_hypercube
 
 
 # Testing

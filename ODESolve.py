@@ -148,7 +148,7 @@ class ODESolver(ABC):
         return self._num_steps
 
     @abstractmethod
-    def solve(self):
+    def solve(self, E_initial, h, k, min_count):
         pass
 
 
@@ -353,14 +353,21 @@ class AdaptiveRK4(ODESolver):
 
         self._E_curr = E_initial
 
+        def update_step(stage, step_num):
+            """Returns E1 and E2 at the appropriate stage,"""
+            e1 = self._fixed_step(
+                self._fixed_step(self._E_curr, stage, k, step_num),
+                stage, k, step_num)
+            e2 = self._fixed_step(self._E_curr, stage, k, 2 * step_num)
+            return e1, e2
+
         # Stage 1
         while not self.trajectory_reached():
             ratio = 0
             step = h
 
             while ratio < 1:
-                E1 = self._fixed_step(self._fixed_step(self._E_curr, 1, k, step), 1, k, step)
-                E2 = self._fixed_step(self._E_curr, 1, k, 2*step)
+                E1, E2 = update_step(1, step)
                 ratio = self._rho(E1, E2, step)
                 step *= ratio**(1/4)
 
@@ -374,12 +381,11 @@ class AdaptiveRK4(ODESolver):
             step = h
 
             while ratio < 1:
-                E1 = self._fixed_step(self._fixed_step(self._E_curr, 2, k, step), 2, k, step)
-                E2 = self._fixed_step(self._E_curr, 2, k, 2*step)
+                E1, E2 = update_step(2, step)
                 ratio = self._rho(E1, E2, step)
-                step *= ratio**(1/4)
+                step *= ratio ** (1 / 4)
 
             self._E_curr = self._fixed_step(self._E_curr, 2, k, step)
             self.update_trajectory()
 
-        return self._x_list[:-min_count], self._p_list[:-min_count]
+        return self._x_list[: -min_count], self._p_list[: -min_count]
