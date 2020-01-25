@@ -74,7 +74,7 @@ def _H_partial(D, E, var):
 
     var_dict = {'x': 0, 'p': 1}
 
-    assert var in var_dict.keys()
+    assert var in var_dict
 
     idx = var_dict[var]
     return sum(-2 * (E[idx]-E_i[idx]) * _H_i(E, E_i) for E_i in D)
@@ -141,5 +141,5 @@ def dynamics(D, E, H_r, stage, k):
     Hx, Hp, diff, mod = (_H_partial(D, E, 'x'), _H_partial(D, E, 'p'),
                          H(D, E) - H_r, f(D, E, k, stage))
     dx_dt = mod * (Hp - Hx * diff ** (1 / 3))
-    dp_dt = - mod * (Hx + Hp*diff ** (1 / 3))
+    dp_dt = - mod * (Hx + Hp * diff ** (1 / 3))
     return np.array([dx_dt, dp_dt], float)
