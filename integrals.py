@@ -71,7 +71,7 @@ def monte_mean_value(D, E_i, H_r, x_range, p_range, n, random_gen):
         The number of samples to be used
     H_r : float
         The reference level of the trajectory
-    random_gen : PointGenerators
+    random_gen : Callable
         Optional: the random number distribution to be used. Currently
         supports 'uniform', 'gaussian', 'hypercube'. If none specified, 
         defaults to 2D uniform
@@ -85,9 +85,10 @@ def monte_mean_value(D, E_i, H_r, x_range, p_range, n, random_gen):
     assert x_range[1] > x_range[0]
     assert p_range[1] > p_range[0]
     v = (x_range[1] - x_range[0]) * (p_range[1] - p_range[0])
+    random_gen = random_gen or PointGenerators.GAUSSIAN
     integral = 0
 
-    for e in random_gen.value(x_range, p_range, n):
+    for e in random_gen(x_range, p_range, n):
         if H(D, e) >= H_r:
             integral += winding_integrand(E_i, e)
     return v * integral / n
