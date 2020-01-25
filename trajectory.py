@@ -15,7 +15,6 @@ Date            Author              Description
 import numpy as np 
 import math as m
 
-
 def euclidean(E1, E2):
     """
     Returns Euclidean distance between two points E1 and E2 in phase space

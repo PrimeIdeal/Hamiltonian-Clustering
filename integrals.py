@@ -30,6 +30,7 @@ def winding_integrand(E_i, E):
     """
     The transformed winding number function to be integrated over
     the domain enclosed by the trajectory.
+    
     Parameters
     ----------
     E_i : ndarray
@@ -49,7 +50,7 @@ def winding_integrand(E_i, E):
     return 2 * x_diff * p_diff / (m.pi * (x_diff ** 2 + p_diff ** 2) ** 2)
 
 
-def monte_mean_value(E_i, H_r, x_range, p_range, n, random_gen):
+def monte_mean_value(D, E_i, H_r, x_range, p_range, n, random_gen):
     """
     Computes the winding number at each point in e_i for points in a rectangular domain in
     phase space. Bounds are defined by (x_range, p_range) and points are
@@ -58,6 +59,8 @@ def monte_mean_value(E_i, H_r, x_range, p_range, n, random_gen):
 
     Parameters
     ----------
+    D : set(ndarray)
+        The data set containing our observed points in phase space
     E_i : ndarray
         The reference point of the integrand in phase space
     x_range : ndarray
@@ -85,7 +88,6 @@ def monte_mean_value(E_i, H_r, x_range, p_range, n, random_gen):
     integral = 0
 
     for e in random_gen.value(x_range, p_range, n):
-        if H(e) >= H_r:
+        if H(D, e) >= H_r:
             integral += winding_integrand(E_i, e)
-    
     return v * integral / n
