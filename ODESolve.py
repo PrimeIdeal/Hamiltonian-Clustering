@@ -151,6 +151,14 @@ class ODESolver(ABC):
     def solve(self, E_initial, h, k, min_count):
         pass
 
+    def clear_comp(self):
+        """Clears all instance variables modified by solve()"""
+        self._E_curr = None
+        self._x_list = []
+        self._p_list = []
+        self._num_steps = 0
+        self._closed_count = 0
+
 
 class Leapfrog(ODESolver):
     """
@@ -240,6 +248,7 @@ class Leapfrog(ODESolver):
 
         return self._x_list[:-min_count], self._p_list[:-min_count]
 
+
 class AdaptiveRK4(ODESolver):
     """
     Solves both stages of the dynamical system using Adaptive RK4.
@@ -271,7 +280,7 @@ class AdaptiveRK4(ODESolver):
     """
 
     def __init__(self, D, H_r, delta, step_delta):
-        ODESolver.__init__(self, D, H_r, delta)
+        super().__init__(D, H_r, delta)
         self._step_delta = step_delta
 
     def _rho(self, E1, E2, step):
