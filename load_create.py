@@ -61,11 +61,7 @@ if __name__ == '__main__':
 
     x, p = np.array([0, 2]), np.array([0, 2])
     D = create_test_set(x, p, 450, 3)
-    x_list, p_list = [], []
-
-    for pt in D:
-        x_list.append(pt[0])
-        p_list.append(pt[1])
+    x_list, p_list = zip(*D)
 
     pl.plot(x_list, p_list, '.')
     pl.show()

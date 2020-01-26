@@ -1,9 +1,10 @@
 """A collection of methods for executing the Hamiltonian Clustering algorithm"""
 import ODESolve as ode_solve
+import numpy as np
 from load_create import create_test_set
 from integrals import monte_mean_value as winding_number
 import matplotlib.pyplot as plt
-
+from scipy import interpolate
 
 # TODO: Get rid of this and think of something more clever
 PERIODICITY_STEPS = 5
@@ -83,5 +84,16 @@ class ClusterPoints:
             self.ode_solver.clear_comp()
 
     def plot(self):
-        """Visually plots both the data and the found set curves."""
-        pass
+        """Visually plots both the data and each locus."""
+        for level_set in self.level_sets:
+            breakpoint()
+            tck, u = interpolate.splprep(level_set, s=0)
+            print(tck)
+            print(u)
+            unew = np.arange(0, 2, 0.01)
+            print(unew)
+            out = interpolate.splev(unew, tck)
+            print(out)
+            plt.figure()
+            plt.plot(*out)
+            plt.show()
