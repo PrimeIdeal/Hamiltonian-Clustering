@@ -9,6 +9,7 @@ from scipy import interpolate
 # TODO: Get rid of this and think of something more clever
 PERIODICITY_STEPS = 5
 TARGET_DELTA = (0.1, 0.1)
+STEP_DELTA = 0.2
 INTEGRAL_ERROR = 1 / 2
 INTEGRAL_NUM_SAMPLES = 50
 
@@ -60,8 +61,8 @@ class ClusterPoints:
     def cluster_points(self):
         """Run the point clustering algorithm."""
         unclustered_points = self.data_set.copy()
-        solver = self.ode_solver(D=unclustered_points, H_r=self.hr,
-                                 delta=TARGET_DELTA)
+        solver = self.ode_solver(D=unclustered_points, H_r=self._hr,
+                                 delta=TARGET_DELTA, step_delta=STEP_DELTA)
 
         while unclustered_points:
             e_i = unclustered_points.pop()
@@ -85,15 +86,23 @@ class ClusterPoints:
 
     def plot(self):
         """Visually plots both the data and each locus."""
+
+        plt.figure()
+
+        # Plot the data points
+        x_points, p_points = zip(*self.data_set)
+        plt.plot(x_points, p_points, '.')
+
+        # Plot the level sets
         for level_set in self.level_sets:
-            breakpoint()
-            tck, u = interpolate.splprep(level_set, s=0)
-            print(tck)
-            print(u)
-            unew = np.arange(0, 2, 0.01)
-            print(unew)
-            out = interpolate.splev(unew, tck)
-            print(out)
-            plt.figure()
+            tck, u = interpolate.splprep(level_set, s=0.001)
+            out = interpolate.splev(u, tck)
             plt.plot(*out)
-            plt.show()
+        plt.show()
+
+
+# Testing
+if __name__ == '__main__':
+    test_run = ClusterPoints((0, 2), (0, 2), 10, 5, 0.4)
+    test_run.cluster_points()
+    test_run.plot()
