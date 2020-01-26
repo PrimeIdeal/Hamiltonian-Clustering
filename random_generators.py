@@ -64,12 +64,12 @@ def gen_gaussian(x_range, p_range, num_pts):
     assert len(x_range) == len(p_range) == 2
     mu_x, mu_p = (x_range[0] + np.diff(x_range).item() / 2,
                   p_range[0] + np.diff(p_range).item() / 2)
-    sigma_x, sigma_p = 1 / 3, 1 / 3  # TODO: make this user-specifiable
+    sigma_x, sigma_p = 1/3, 1/3 # TODO: make this user-specifiable
     
     for _i in range(num_pts):
         x_pt, p_pt = (mu_x + mu_x * r.gauss(0, sigma_x) % 1,
                       mu_p + mu_p * r.gauss(0, sigma_p) % 1)
-        yield np.array([x_pt, p_pt])
+        yield (x_pt, p_pt)
 
 
 def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
@@ -108,6 +108,20 @@ def gen_hypercube(x_range, p_range, num_pts, rand_pt_gen=gen_uniform):
                         pt_p + p_indices[i] * p_step])
 
 
+def gen_capacities(num_pts, num_groups):
+    """
+    Generates random group capacities to bin num_pts points into
+    num_groups groups. Minimum one point per group.
+    """
+    for k in range(num_groups):
+        if k == num_groups - 1:
+            cap = num_pts
+        else:
+            cap = r.randint(1, num_pts - (num_groups - k))
+        num_pts -= cap
+        yield cap
+
+
 class PointGenerators(Enum):
     """Tracks random point generation functions."""
     UNIFORM = gen_uniform
@@ -128,3 +142,7 @@ if __name__ == '__main__':
         p_list.append(s[1])
     pl.plot(x_list, p_list, '.')
     pl.show()
+
+    # test gen_capacities
+    for cap in gen_capacities(100, 5):
+        print(cap)
