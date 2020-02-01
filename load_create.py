@@ -42,14 +42,15 @@ def create_test_set(x_range, p_range, num_pts, num_groups):
     data_set = set()
     x_step, p_step = (np.diff(x_range).item() / num_groups,
                       np.diff(p_range).item() / num_groups)
-
     group_sizes = rg.gen_capacities(num_pts, num_groups)
 
     for group_center in rg.gen_hypercube(x_range, p_range, num_groups):
-        group_x_range = np.array([group_center[0] - x_step/2,
-                                  group_center[0] + x_step/2])
-        group_p_range = np.array([group_center[1] - p_step/2,
-                                  group_center[1] + p_step/2])
+        group_x_range = np.array([
+            min(group_center[0] - x_step / 2, x_range[0]),
+            max(group_center[0] + x_step / 2, x_range[1])])
+        group_p_range = np.array([
+            min(group_center[1] - p_step / 2, p_range[0]),
+            max(group_center[1] + p_step / 2, p_range[1])])
         data_set |= set(rg.gen_gaussian(group_x_range, group_p_range,
                                         next(group_sizes)))
     return data_set
