@@ -72,7 +72,6 @@ def _H_partial(D, E, var):
     """
 
     var_dict = {'x': 0, 'p': 1}
-
     assert var in var_dict
 
     idx = var_dict[var]

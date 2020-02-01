@@ -51,7 +51,7 @@ def winding_integrand(E_i, E):
     return 2 * x_diff * p_diff / (m.pi * (x_diff ** 2 + p_diff ** 2) ** 2)
 
 
-def monte_mean_value(D, E_i, H_r, x_range, p_range, n, random_gen):
+def monte_mean_value(D, E_i, H_r, x_range, p_range, n, random_gen=None):
     """
     Computes the winding number about each E_i for points in a rectangular
     domain in phase space. Bounds are defined by (x_range, p_range) and points

@@ -199,7 +199,8 @@ class Leapfrog(ODESolver):
         x(t), returns x(t+h/2).
         """
 
-        return self._E_curr + 0.5*h*tr.dynamics(self._D, self._E_curr, self._H_r, k, stage)
+        return self._E_curr + 0.5*h*tr.dynamics(self._D, self._E_curr,
+                                                self._H_r, stage, k)
     
     def solve(self, E_initial, h, k, min_count=5):
         """
@@ -230,14 +231,12 @@ class Leapfrog(ODESolver):
         self._E_curr = E_initial
         
         # Stage 1
-
         half = self._euler(h, k, 1)
         while not self.trajectory_reached():
             self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 1, k)
             half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 1, k)
 
         # Stage 2
-
         self.update_trajectory()
 
         half = self._euler(h, k, 2)
@@ -245,8 +244,7 @@ class Leapfrog(ODESolver):
             self._E_curr += h*tr.dynamics(self._D, half, self._H_r, 2, k)
             half += h*tr.dynamics(self._D, self._E_curr, self._H_r, 2, k)
             self.update_trajectory()
-
-        return self._x_list[:-min_count], self._p_list[:-min_count]
+        return self._x_list[-min_count:], self._p_list[-min_count:]
 
 
 class AdaptiveRK4(ODESolver):

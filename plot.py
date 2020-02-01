@@ -65,24 +65,25 @@ class ClusterPoints:
                                  delta=TARGET_DELTA, step_delta=STEP_DELTA)
 
         while unclustered_points:
-            e_i = unclustered_points.pop()
+            e_i = np.array(unclustered_points.pop())
             cur_cluster = set()
-
-            # TODO: I think there's a conceptual error in my understanding of
-            #  monte_mean_value, why should it take random_gen instead of
-            #  sol_trajectory
-            sol_trajectory = solver.solve(E_initial=e_i, h=self.step_size,
-                                          k=self.k_params,
-                                          min_count=PERIODICITY_STEPS)
-            self.level_sets.append(sol_trajectory)
-            for e_k in unclustered_points:
+            sol_x_vals, sol_p_vals = solver.solve(E_initial=e_i,
+                                                  h=self.step_size,
+                                                  k=self.k_params,
+                                                  min_count=PERIODICITY_STEPS)
+            sol_min_x, sol_max_x = min(sol_x_vals), max(sol_x_vals)
+            sol_min_p, sol_max_p = min(sol_p_vals), max(sol_p_vals)
+            self.level_sets.append(list(zip(sol_x_vals, sol_p_vals)))
+            np_points = [np.array(e_k) for e_k in unclustered_points]
+            for e_k in np_points:
                 if abs(1 - winding_number(
-                        D=self.data_set, E_i=e_k, H_r=self._hr,
-                        x_range=self.x_range, p_range=self.p_range,
+                        D=np_points, E_i=e_k, H_r=self._hr,
+                        x_range=[sol_min_x, sol_max_x],
+                        p_range=[sol_min_p, sol_max_p],
                         n=INTEGRAL_NUM_SAMPLES)) < INTEGRAL_ERROR:
                     cur_cluster.add(e_k)
             unclustered_points -= cur_cluster
-            self.ode_solver.clear_comp()
+            solver.clear_comp()
 
     def plot(self):
         """Visually plots both the data and each locus."""
