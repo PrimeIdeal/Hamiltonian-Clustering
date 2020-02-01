@@ -74,7 +74,7 @@ class ODESolver(ABC):
         required distance of points S[i]
     """
 
-    def __init__(self, D, H_r, delta):
+    def __init__(self, D, H_r, delta, **kwargs):
         self._D = D
         self._E_curr = None
         self._H_r = H_r
@@ -188,7 +188,7 @@ class Leapfrog(ODESolver):
         required distance of points S[i]
     """
 
-    def __init__(self, D, H_r, delta):
+    def __init__(self, D, H_r, delta, **kwargs):
         ODESolver.__init__(self, D, H_r, delta)
 
     def _euler(self, h, k, stage):
@@ -277,9 +277,11 @@ class AdaptiveRK4(ODESolver):
         Target accuracy parameter for the adaptive step
     """
 
-    def __init__(self, D, H_r, delta, step_delta):
+    def __init__(self, D, H_r, delta, **kwargs):
         super().__init__(D, H_r, delta)
-        self._step_delta = step_delta
+        self._step_delta = kwargs.get('step_delta', None)
+
+        assert self._step_delta, 'A nonzero step_delta must be passed in.'
 
     def _rho(self, E1, E2, step):
         """
