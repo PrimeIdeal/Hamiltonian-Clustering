@@ -19,4 +19,4 @@ equations, numerical integration
 - adapt our implementation to match the refinements in Casagrande, Astolfi and 
 Sassano's 2012 paper on Hamiltonian clustering
 
-Thanks to Grisha Ivanov for finding the paper
+Thanks to Grisha Ivanov for finding the paper!
